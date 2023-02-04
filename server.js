@@ -86,7 +86,13 @@ const inventoryUpload = async (req, res) => {
                             if (err) {
                                 console.error("Error analysing expense: ", err); // log error
                             } else {
-                                var summaryFields = {"vendor_name": "N/A", "total": 0, "invoice_date": "N/A", "invoice_id": "N/A"}; // array of summary fields
+                                var summaryFields = {
+                                    "vendor_name": "N/A",
+                                    "total": 0,
+                                    "invoice_date": "N/A",
+                                    "invoice_id": "N/A",
+                                    "vendor_phone": "N/A"
+                                }; // array of summary fields
                                 var lineItems = []; // array of line items
                                 // var typeCount = 0; // count of types
                                 // var valueCount = 0; // count of values
@@ -102,10 +108,12 @@ const inventoryUpload = async (req, res) => {
                                             // if (valueCount == 0){
                                             //     valueCount++; // increment value count
                                             // }
-                                        } else if (summaryField.Type.text == "INVOICE_RECEIPT_DATE" && summaryField["invoice_date"] == "N/A"){
+                                        } else if (summaryField.Type.Text == "INVOICE_RECEIPT_DATE" && summaryField["invoice_date"] == "N/A"){
                                             summaryFields["invoice_date"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
-                                        } else if (summaryField.Type.text == "INVOICE_RECEIPT_ID" && summaryField["invoice_id"] == "N/A"){
+                                        } else if (summaryField.Type.Text == "INVOICE_RECEIPT_ID" && summaryField["invoice_id"] == "N/A"){
                                             summaryFields["invoice_id"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
+                                        } else if (summaryField.Type.Text == "VENDOR_PHONE" && summaryField["vendor_phone"] == "N/A"){
+                                            summaryFields["vendor_phone"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
                                         }
                                     }); // summary fields
                                     // Important Note: VENDOR_NAME and TOTAL are the needed fields
