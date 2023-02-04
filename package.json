@@ -4,10 +4,9 @@
   "description": "Monke Inventory Backend",
   "main": "server.js",
   "scripts": {
-    "test": "test",
     "start": "nodemon server.js"
   },
-  "author": "Faiz Ghanchi",
+  "author": "Faiz",
   "license": "ISC",
   "dependencies": {
     "aws-sdk": "^2.1309.0",
