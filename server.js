@@ -54,15 +54,15 @@ const textract = new AWS.Textract({
 }); // create Textract instance
 
 // api endpoint for uploading and analysing an image
-app.post('/inventoryUpload', upload.single('image'), async (req, res) => {
+app.post('/inventoryUpload', upload.single('file'), async (req, res) => {
     try {
         const uuidGenerator = uuid.v4(); // generate unique file name
         const fileName = `${uuidGenerator}.jpg`; // generate unique file name
-        const image = Buffer.from(req.image, 'base64'); // convert base64 to buffer
+        const file = req.file; // convert base64 to buffer
         const s3Params = {
             Bucket: process.env.S3_BUCKET_NAME, // bucket name
             Key: fileName, // file name
-            Body: image, // file content
+            Body: file.buffer, // file content
         }; // params for S3 upload
 
         s3.upload(s3Params, async (err, data) => {
