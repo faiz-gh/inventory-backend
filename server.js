@@ -64,7 +64,6 @@ app.post('/inventoryUpload', upload.single('image'), async (req, res) => {
             Key: fileName, // file name
             Body: image, // file content
             ContentEncoding: 'base64', // content encoding
-            ContentType: image.mimetype, // content type
         }; // params for S3 upload
 
         s3.upload(s3Params, async (err, data) => {
