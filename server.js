@@ -54,7 +54,7 @@ const inventoryUpload = async (req, res) => {
     try {
         const uuidGenerator = uuid.v4(); // generate unique file name
         const fileName = `${uuidGenerator}.jpg`; // generate unique file name
-        const image = Buffer.from(req.body.photo, 'base64'); // convert base64 to buffer
+        const image = Buffer.from(req.file, 'base64'); // convert base64 to buffer
         const s3Params = {
             Bucket: process.env.S3_BUCKET_NAME, // bucket name
             Key: fileName, // file name
