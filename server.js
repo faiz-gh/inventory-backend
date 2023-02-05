@@ -56,12 +56,14 @@ const textract = new AWS.Textract({
 app.post('/inventoryUpload', upload.single('file'), async (req, res) => {
     try {
         const uuidGenerator = uuid.v4(); // generate unique file name
-        const fileName = `${uuidGenerator}.jpg`; // generate unique file name
-        const file = req.file; // convert base64 to buffer
+        const fileName = `${uuidGenerator}.${req.file.mimetype}`; // file name
+        const fileBuffer = req.file.buffer; // file content
+        const fileExtension = req.file.mimetype; // file type
         const s3Params = {
             Bucket: process.env.S3_BUCKET_NAME, // bucket name
             Key: fileName, // file name
-            Body: file.buffer, // file content
+            Body: fileBuffer, // file content
+            ContentType: fileExtension, // file type
         }; // params for S3 upload
 
         s3.upload(s3Params, async (err, data) => {
