@@ -58,12 +58,11 @@ app.post('/inventoryUpload', upload.single('image'), async (req, res) => {
     try {
         const uuidGenerator = uuid.v4(); // generate unique file name
         const fileName = `${uuidGenerator}.jpg`; // generate unique file name
-        const image = req.image; // convert base64 to buffer
+        const image = Buffer.from(req.image, 'base64'); // convert base64 to buffer
         const s3Params = {
             Bucket: process.env.S3_BUCKET_NAME, // bucket name
             Key: fileName, // file name
             Body: image, // file content
-            ContentEncoding: 'base64', // content encoding
         }; // params for S3 upload
 
         s3.upload(s3Params, async (err, data) => {
