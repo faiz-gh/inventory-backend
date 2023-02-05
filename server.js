@@ -62,7 +62,7 @@ app.post('/inventoryUpload', upload.single('image'), async (req, res) => {
         const s3Params = {
             Bucket: process.env.S3_BUCKET_NAME, // bucket name
             Key: fileName, // file name
-            Body: Buffer.from(image, 'base64'), // file content
+            Body: image, // file content
             ContentEncoding: 'base64', // content encoding
             ContentType: image.mimetype, // content type
         }; // params for S3 upload
