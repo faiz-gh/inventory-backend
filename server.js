@@ -139,6 +139,7 @@ const inventoryUpload = async (req, res) => {
                                     db.collection('bills').doc(uuidGenerator).set({
                                         invoice_id: summaryFields.invoice_id,
                                         vendor_name: summaryFields.vendor_name,
+                                        vendor_phone: summaryFields.vendor_phone,
                                         invoice_date: summaryFields.invoice_date,
                                         items: lineItems,
                                         total: summaryFields.total,
@@ -153,12 +154,20 @@ const inventoryUpload = async (req, res) => {
                                     const num = Math.round((number + Number.EPSILON) * 100) / 100;
 
 				                    db.collection('data').doc('stats').update({
-					                    count: admin.firestore.FieldValue.increment(num), // increment discount
+					                    totalAmount: admin.firestore.FieldValue.increment(num), // increment discount
                                     }).then((docRef) => {
                                         console.log("Document written with ID: ", docRef.id); // log success
                                     }).catch((error) => {
                                         console.error("Error adding document: ", error); // log error
-                                    }); // update total
+                                    }); // update totalAmount
+
+                                    db.collection('data').doc('stats').update({
+                                        totalBills: admin.firestore.FieldValue.increment(1), // increment discount
+                                    }).then((docRef) => {
+                                        console.log("Document written with ID: ", docRef.id); // log success
+                                    }).catch((error) => {
+                                        console.error("Error adding document: ", error); // log error
+                                    }); // update totalBills
 
                                 } catch (err){
                                     throw("Error uploading to the firestore: " , err);
