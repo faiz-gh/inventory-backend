@@ -6,6 +6,10 @@ const BodyParser = require('body-parser'); // for parsing JSON
 const uuid = require('uuid'); // for generating unique file names
 const dotenv = require('dotenv'); // for loading environment variables
 
+const multer = require('multer'); // for parsing multipart/form-data
+const storage = multer.memoryStorage(); // store files in memory
+const upload = multer({ storage: storage }); // create multer instance
+
 // configure Firebase Admin SDK
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount), // service account key
@@ -185,7 +189,7 @@ const inventoryUpload = async (req, res) => {
     }
 } // inventoryUpload
 
-app.post('/inventoryUpload', (req, res) => {
+app.post('/inventoryUpload', upload.single('image'), (req, res) => {
     return inventoryUpload(req, res);
 }); // POST /inventoryUpload
 
