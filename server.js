@@ -141,7 +141,7 @@ const inventoryUpload = async (req, res) => {
 
                                 try {
                                     var currentDate = new Date().toISOString(); // current date
-                                    var docname = summaryFields.vendor_name + " - " + currentDate; // generate unique document name
+                                    var docname = summaryFields.vendor_name + "-" + currentDate; // generate unique document name
                                     db.collection('bills').doc(docname).set({
                                         invoice_id: summaryFields.invoice_id,
                                         vendor_name: summaryFields.vendor_name,
