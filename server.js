@@ -5,9 +5,10 @@ const serviceAccount = require('./serviceAccount.json'); // service account key
 const BodyParser = require('body-parser'); // for parsing JSON
 const uuid = require('uuid'); // for generating unique file names
 const dotenv = require('dotenv'); // for loading environment variables
-
 const multer = require('multer'); // for parsing multipart/form-data
-const upload = multer({ dest: 'uploads/' });
+
+const storage = multer.memoryStorage(); // memory storage
+const upload = multer({ storage }); // multer instance
 
 // configure Firebase Admin SDK
 admin.initializeApp({
@@ -16,9 +17,7 @@ admin.initializeApp({
 const db = admin.firestore(); // get Firestore instance
 admin.firestore().settings({ignoreUndefinedProperties:true}); // ignore undefined properties
 
-// create express app
-const app = express(); 
-
+const app = express(); // create express app
 // configure express app
 app.use(BodyParser.json({
     limit: '50mb',
@@ -52,18 +51,20 @@ const textract = new AWS.Textract({
     signatureVersion: 'v4', // signature version
 }); // create Textract instance
 
-// api endpoint for uploading and analysing an image
-app.post('/inventoryUpload', upload.single('file'), async (req, res) => {
+const inventoryUpload = async (req, res) => {
     try {
         const uuidGenerator = uuid.v4(); // generate unique file name
-        const fileName = `${uuidGenerator}.${req.file.mimetype}`; // file name
-        const fileBuffer = req.file.buffer; // file content
-        const fileExtension = req.file.mimetype; // file type
+        const contentType = req.file.mimetype; // get content type
+        const extension = contentType.split('/')[1]; // get file extension
+        const fileName = `${uuidGenerator}.${extension}`; // generate unique file name
+        const fileData = req.file.buffer; // get file data
+        
         const s3Params = {
             Bucket: process.env.S3_BUCKET_NAME, // bucket name
             Key: fileName, // file name
-            Body: fileBuffer, // file content
-            ContentType: fileExtension, // file type
+            Body: fileData, // file content
+            ContentEncoding: 'base64', // content encoding
+            ContentType: contentType, // content type
         }; // params for S3 upload
 
         s3.upload(s3Params, async (err, data) => {
@@ -90,32 +91,24 @@ app.post('/inventoryUpload', upload.single('file'), async (req, res) => {
                                 console.error("Error analysing expense: ", err); // log error
                             } else {
                                 var summaryFields = {
-                                    "vendor_name": "N/A",
-                                    "total": 0,
-                                    "invoice_date": "N/A",
                                     "invoice_id": "N/A",
-                                    "vendor_phone": "N/A"
+                                    "invoice_date": "N/A",
+                                    "vendor_name": "N/A",
+                                    "vendor_phone": "N/A",
+                                    "total": 0,
                                 }; // array of summary fields
                                 var lineItems = []; // array of line items
-                                // var typeCount = 0; // count of types
-                                // var valueCount = 0; // count of values
                                 jdata.ExpenseDocuments.forEach((expenseDocument) => {
                                     expenseDocument.SummaryFields.forEach((summaryField) => {
-                                        if (summaryField.Type.Text == "VENDOR_NAME" && summaryField["vendor_name"] == "N/A"){
+                                        if (summaryField.Type.Text == "VENDOR_NAME" && summaryFields["vendor_name"] == "N/A"){
                                             summaryFields["vendor_name"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
-                                            // if (typeCount == 0){
-                                            //     typeCount++; // increment type count
-                                            // }
-                                        } else if (summaryField.Type.Text == "TOTAL" && summaryField["total"] == 0){
+                                        } else if (summaryField.Type.Text == "TOTAL" && summaryFields["total"] == 0){
                                             summaryFields["total"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
-                                            // if (valueCount == 0){
-                                            //     valueCount++; // increment value count
-                                            // }
-                                        } else if (summaryField.Type.Text == "INVOICE_RECEIPT_DATE" && summaryField["invoice_date"] == "N/A"){
+                                        } else if (summaryField.Type.Text == "INVOICE_RECEIPT_DATE" && summaryFields["invoice_date"] == "N/A"){
                                             summaryFields["invoice_date"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
-                                        } else if (summaryField.Type.Text == "INVOICE_RECEIPT_ID" && summaryField["invoice_id"] == "N/A"){
+                                        } else if (summaryField.Type.Text == "INVOICE_RECEIPT_ID" && summaryFields["invoice_id"] == "N/A"){
                                             summaryFields["invoice_id"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
-                                        } else if (summaryField.Type.Text == "VENDOR_PHONE" && summaryField["vendor_phone"] == "N/A"){
+                                        } else if (summaryField.Type.Text == "VENDOR_PHONE" && summaryFields["vendor_phone"] == "N/A"){
                                             summaryFields["vendor_phone"] = summaryField.ValueDetection.Text.replace(/\n/g, ' '); // value of field
                                         }
                                     }); // summary fields
@@ -143,9 +136,7 @@ app.post('/inventoryUpload', upload.single('file'), async (req, res) => {
                                 console.log(JSON.stringify(lineItems)); // log line items
 
                                 try {
-                                    var currentDate = new Date().toISOString(); // current date
-                                    var docname = summaryFields.vendor_name + "-" + currentDate; // generate unique document name
-                                    db.collection('bills').doc(docname).set({
+                                    db.collection('bills').doc(uuidGenerator).set({
                                         invoice_id: summaryFields.invoice_id,
                                         vendor_name: summaryFields.vendor_name,
                                         invoice_date: summaryFields.invoice_date,
@@ -153,17 +144,16 @@ app.post('/inventoryUpload', upload.single('file'), async (req, res) => {
                                         total: summaryFields.total,
                                         date: new Date().toISOString(),
                                     }).then((docRef) => {
-                                        console.log("Document written with ID: ", docname); // log success
+                                        console.log("Document written with ID: ", docRef.id); // log success
                                     }).catch((error) => {
                                         console.error("Error adding document: ", error); // log error
                                     }); // add bill to database
 
-                                    // filtering discount value
-                                    const number = parseFloat(summaryFields.total.match(/[+-]?\d+(\.\d+)?/g)[0]) * 0.1; // calculate discount
-                                    const discount = Math.round((number + Number.EPSILON) * 100) / 100; // rounding off to 2 decimal points
+                                    const number = parseFloat(summaryFields.total.match(/[+-]?\d+(\.\d+)?/g)[0]);
+                                    const num = Math.round((number + Number.EPSILON) * 100) / 100;
 
 				                    db.collection('data').doc('stats').update({
-					                    count: admin.firestore.FieldValue.increment(discount), // increment discount
+					                    count: admin.firestore.FieldValue.increment(num), // increment discount
                                     }).then((docRef) => {
                                         console.log("Document written with ID: ", docRef.id); // log success
                                     }).catch((error) => {
@@ -186,6 +176,10 @@ app.post('/inventoryUpload', upload.single('file'), async (req, res) => {
         console.error("Error connecting to S3: ", error); // log error
         throw error;
     }
+} // inventoryUpload
+
+app.post('/inventoryUpload', upload.single('bill'), (req, res) => {
+    return inventoryUpload(req, res);
 }); // POST /inventoryUpload
 
-// pm2 --name inventory start npm -- start
+// pm2 --name monke start npm -- start
