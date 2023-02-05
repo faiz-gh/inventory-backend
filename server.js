@@ -7,8 +7,7 @@ const uuid = require('uuid'); // for generating unique file names
 const dotenv = require('dotenv'); // for loading environment variables
 
 const multer = require('multer'); // for parsing multipart/form-data
-const storage = multer.memoryStorage(); // store files in memory
-const upload = multer({ storage: storage }); // create multer instance
+const upload = multer({ dest: 'uploads/' });
 
 // configure Firebase Admin SDK
 admin.initializeApp({
