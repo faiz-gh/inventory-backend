@@ -151,7 +151,7 @@ const inventoryUpload = async (req, res) => {
                                     }); // add bill to database
 
                                     const number = parseFloat(summaryFields.total.match(/[+-]?\d+(\.\d+)?/g)[0]);
-                                    const num = Math.round((number + Number.EPSILON) * 100) / 100;
+                                    const num = (Math.round(number * 100) / 100).toFixed(2);
 
 				                    db.collection('data').doc('stats').update({
 					                    totalAmount: admin.firestore.FieldValue.increment(num), // increment discount
