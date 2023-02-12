@@ -173,7 +173,7 @@ const inventoryUpload = async (req, res) => {
                                     throw("Error uploading to the firestore: " , err);
                                 }
                                  // add to firestore
-                                res.status(200).redirect("https://monke-inventory.web.app/bills.html"); // send success
+                                res.status(200).send("Success"); // send success
                             }
                         }); // analyse expense
                     }
