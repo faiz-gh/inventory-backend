@@ -150,25 +150,6 @@ const inventoryUpload = async (req, res) => {
                                         console.error("Error adding document: ", error); // log error
                                     }); // add bill to database
 
-                                    const number = parseFloat(summaryFields.total.match(/[+-]?\d+(\.\d+)?/g)[0]);
-                                    const num = Math.round((number + Number.EPSILON) * 100) / 100;
-
-				                    db.collection('data').doc('stats').update({
-					                    totalAmount: admin.firestore.FieldValue.increment(num), // increment discount
-                                    }).then((docRef) => {
-                                        console.log("Document written with ID: ", docRef.id); // log success
-                                    }).catch((error) => {
-                                        console.error("Error adding document: ", error); // log error
-                                    }); // update totalAmount
-
-                                    db.collection('data').doc('stats').update({
-                                        totalBills: admin.firestore.FieldValue.increment(1), // increment discount
-                                    }).then((docRef) => {
-                                        console.log("Document written with ID: ", docRef.id); // log success
-                                    }).catch((error) => {
-                                        console.error("Error adding document: ", error); // log error
-                                    }); // update totalBills
-
                                 } catch (err){
                                     throw("Error uploading to the firestore: " , err);
                                 }
